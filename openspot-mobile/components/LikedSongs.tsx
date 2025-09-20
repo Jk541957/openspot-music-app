@@ -34,7 +34,7 @@ export function LikedSongs({
 
   const likedTracks = getLikedSongsAsTrack();
 
-  // Animation values for header
+  
   const headerHeight = scrollY.interpolate({
     inputRange: [0, 150],
     outputRange: [200, 0],
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     flexGrow: 1,
-    paddingBottom: 180, // Space for music player + 2 items
+    paddingBottom: 180, 
   },
   header: {
     height: 200,

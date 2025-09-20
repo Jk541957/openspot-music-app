@@ -20,7 +20,7 @@ import { useLikedSongs } from '@/hooks/useLikedSongs';
 interface QueueDisplayProps {
   isOpen: boolean;
   onClose: () => void;
-  musicQueue: any; // We'll type this properly later
+  musicQueue: any; 
   onTrackSelect: (track: Track, index: number) => void;
   currentTrack: Track | null;
 }

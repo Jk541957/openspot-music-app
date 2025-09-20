@@ -185,8 +185,6 @@ export function FullScreenPlayer({
     >
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#000" />
-        
-        {/* Background Image with Blur */}
         <View style={styles.backgroundContainer}>
           <Image
             source={{ uri: track.images.large }}
@@ -200,8 +198,7 @@ export function FullScreenPlayer({
           />
         </View>
 
-        {/* Header */}
-        <View style={styles.header}>
+                <View style={styles.header}>
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
             <Ionicons name="chevron-down" size={28} color="#fff" />
           </TouchableOpacity>
@@ -211,10 +208,8 @@ export function FullScreenPlayer({
           </TouchableOpacity>
         </View>
 
-        {/* Main Content */}
-        <View style={styles.content}>
-          {/* Album Art */}
-          <View style={styles.albumArtContainer}>
+                <View style={styles.content}>
+                    <View style={styles.albumArtContainer}>
             <Image
               source={{ uri: track.images.large }}
               style={styles.albumArt}
@@ -222,8 +217,7 @@ export function FullScreenPlayer({
             />
           </View>
 
-          {/* Track Info */}
-          <View style={styles.trackInfo}>
+                    <View style={styles.trackInfo}>
             <Text style={styles.trackTitle} numberOfLines={1}>
               {track.title}
             </Text>
@@ -232,8 +226,7 @@ export function FullScreenPlayer({
             </Text>
           </View>
 
-          {/* Progress Bar */}
-          <View style={styles.progressContainer}>
+                    <View style={styles.progressContainer}>
             <View style={styles.progressBar}>
               <Text style={styles.timeText}>{formatTime(isSeeking ? seekPosition : position)}</Text>
               <View style={styles.sliderContainer}>
@@ -254,8 +247,7 @@ export function FullScreenPlayer({
             </View>
           </View>
 
-          {/* Controls */}
-          <View style={styles.controls}>
+                    <View style={styles.controls}>
             <TouchableOpacity onPress={handleLike} style={styles.controlButton}>
             <Ionicons 
                 name={isLiked(track.id) ? "heart" : "heart-outline"} 
@@ -282,8 +274,7 @@ export function FullScreenPlayer({
             <DownloadButton track={track} style={styles.controlButton} />
           </View>
 
-          {/* Bottom Controls */}
-          <View style={styles.bottomControls}>
+                    <View style={styles.bottomControls}>
             <TouchableOpacity
               onPress={async () => {
                 const pls = await PlaylistStorage.getPlaylists();
@@ -296,7 +287,7 @@ export function FullScreenPlayer({
               activeOpacity={0.85}
             >
               <LinearGradient
-                colors={["#1DB954", "#1ed760"]}
+                colors={["black", "black"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.addPlaylistButtonGradient}
@@ -307,8 +298,7 @@ export function FullScreenPlayer({
             </TouchableOpacity>
           </View>
         </View>
-        {/* Add to Playlist Modal */}
-        <Modal visible={showAddModal} transparent animationType="fade" onRequestClose={() => setShowAddModal(false)}>
+                <Modal visible={showAddModal} transparent animationType="fade" onRequestClose={() => setShowAddModal(false)}>
           <View style={styles.addModalOverlay}>
             <View style={styles.addModalBox}>
               <Text style={styles.addModalTitle}>Add to Playlist</Text>
@@ -467,7 +457,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 40,
   },
   bottomButton: {
     padding: 12,

@@ -10,6 +10,7 @@ import { useLikedSongs } from '@/hooks/useLikedSongs';
 import { MusicAPI } from '@/lib/music-api';
 import { MusicPlayerContext } from './_layout';
 import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function DownloadsScreen() {
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -19,7 +20,7 @@ export default function DownloadsScreen() {
   const { isLiked, toggleLike } = useLikedSongs();
   const { handleTrackSelect } = useContext(MusicPlayerContext);
 
-  // Fetch offline playlist and tracks
+  
   const fetchOfflineTracks = useCallback(async () => {
     setLoading(true);
     try {
@@ -30,16 +31,31 @@ export default function DownloadsScreen() {
         setLoading(false);
         return;
       }
-      // Show recently downloaded tracks at the top
+      
       const reversedIds = [...offline.trackIds].reverse();
-      // Fetch track data for each ID in parallel
+      
       const trackPromises = reversedIds.map(async (id) => {
         try {
-          const res = await MusicAPI.search({ q: id, type: 'track' });
-          if (res.tracks && res.tracks.length > 0) {
-            return res.tracks[0];
+          const offlineData = await AsyncStorage.getItem(`offline_${id}`);
+          if (offlineData) {
+            const { trackData } = JSON.parse(offlineData);
+            if (trackData) {
+              return trackData;
+            }
           }
-        } catch {}
+          
+          
+          try {
+            const res = await MusicAPI.search({ q: id, type: 'track' });
+            if (res.tracks && res.tracks.length > 0) {
+              return res.tracks[0];
+            }
+          } catch (apiError) {
+            console.warn(`API fallback failed for track ${id}:`, apiError);
+          }
+        } catch (error) {
+          console.error(`Failed to load offline data for track ${id}:`, error);
+        }
         return null;
       });
       const fetchedTracks = await Promise.all(trackPromises);
@@ -55,14 +71,14 @@ export default function DownloadsScreen() {
     }, [fetchOfflineTracks])
   );
 
-  // Play a track (set index, let global Player handle actual playback)
+  
   const handlePlay = (index: number) => {
     if (tracks.length > 0) {
       handleTrackSelect(tracks[index], tracks, index);
     }
   };
 
-  // Shuffle and play
+  
   const handleShuffle = () => {
     if (tracks.length > 0) {
       const shuffled = [...tracks].sort(() => Math.random() - 0.5);
@@ -70,15 +86,15 @@ export default function DownloadsScreen() {
     }
   };
 
-  // Delete a track (remove from playlist, delete files, remove from AsyncStorage)
+  
   const handleDelete = async (track: Track) => {
     Alert.alert('Delete Download', `Remove "${track.title}" from offline music?`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
         try {
-          // Remove from offline playlist
+          
           await PlaylistStorage.removeTrackFromPlaylist(track.id.toString(), 'offline');
-          // Remove files
+          
           const offlineData = await AsyncStorage.getItem(`offline_${track.id}`);
           if (offlineData) {
             const { fileUri, thumbUri } = JSON.parse(offlineData);
@@ -94,7 +110,7 @@ export default function DownloadsScreen() {
     ]);
   };
 
-  // Move row to a memoized component to use hooks safely
+  
   const DownloadTrackRow = React.memo(({ item, index }: { item: Track; index: number }) => {
     const [thumbUri, setThumbUri] = useState<string | null>(null);
     useEffect(() => {
@@ -133,31 +149,33 @@ export default function DownloadsScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Downloads</Text>
-        <View style={styles.headerActions}>
-          <TouchableOpacity onPress={handleShuffle} style={styles.headerButton}>
-            <Ionicons name="shuffle" size={22} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => handlePlay(0)} style={styles.headerButton}>
-            <Ionicons name="play" size={22} color="#1DB954" />
-          </TouchableOpacity>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Downloads</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity onPress={handleShuffle} style={styles.headerButton}>
+              <Ionicons name="shuffle" size={22} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handlePlay(0)} style={styles.headerButton}>
+              <Ionicons name="play" size={22} color="#1DB954" />
+            </TouchableOpacity>
+          </View>
         </View>
+        {loading ? (
+          <ActivityIndicator size="large" color="#1DB954" style={{ marginTop: 40 }} />
+        ) : tracks.length === 0 ? (
+          <Text style={styles.emptyText}>No offline music found.</Text>
+        ) : (
+          <FlatList
+            data={tracks}
+            renderItem={renderItem}
+            keyExtractor={item => item.id.toString()}
+            contentContainerStyle={{ paddingBottom: 120 }}
+          />
+        )}
       </View>
-      {loading ? (
-        <ActivityIndicator size="large" color="#1DB954" style={{ marginTop: 40 }} />
-      ) : tracks.length === 0 ? (
-        <Text style={styles.emptyText}>No offline music found.</Text>
-      ) : (
-        <FlatList
-          data={tracks}
-          renderItem={renderItem}
-          keyExtractor={item => item.id.toString()}
-          contentContainerStyle={{ paddingBottom: 120 }}
-        />
-      )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -165,7 +183,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-    paddingTop: 50,
+  },
+  content: {
+    flex: 1,
+    paddingTop: 20,
     paddingHorizontal: 12,
   },
   header: {

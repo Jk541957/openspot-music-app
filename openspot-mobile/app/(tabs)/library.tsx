@@ -31,7 +31,7 @@ export default function LibraryScreen() {
     fetchPlaylists();
   }, []);
 
-  // Always refresh tracks for the open playlist when playlists or selectedPlaylist changes
+  
   useEffect(() => {
     const refreshTracks = async () => {
       if (selectedPlaylist) {
@@ -42,12 +42,12 @@ export default function LibraryScreen() {
           setPlaylistTracks(tracks);
         }
       } else {
-        // Clear tracks when no playlist is selected
+        
         setPlaylistTracks([]);
       }
     };
     refreshTracks();
-  }, [playlists, selectedPlaylist?.name]); // Only depend on the playlist name, not the entire object
+  }, [playlists, selectedPlaylist?.name]); 
 
   useFocusEffect(
     React.useCallback(() => {
@@ -57,7 +57,7 @@ export default function LibraryScreen() {
 
   const fetchPlaylists = async () => {
     const pls = await PlaylistStorage.getPlaylists();
-    // Filter out the offline playlist
+    
     const filteredPlaylists = pls.filter(pl => pl.name !== 'offline');
     setPlaylists(filteredPlaylists);
   };
@@ -79,7 +79,7 @@ export default function LibraryScreen() {
 
   const handlePlaylistPress = async (playlist: Playlist) => {
     setSelectedPlaylist(playlist);
-    // Fetch tracks for this playlist
+    
     const tracks: any[] = [];
     for (const id of playlist.trackIds) {
       try {
@@ -110,13 +110,13 @@ export default function LibraryScreen() {
     setSelectedPlaylist(null);
     setShowLikedSongs(false);
     setPlaylistTracks([]);
-    setCurrentView('home'); // Reset to home view
+    setCurrentView('home'); 
   };
 
   const handlePlaylistsUpdated = async () => {
     await fetchPlaylists();
     if (selectedPlaylist) {
-      // Refresh tracks for the open playlist
+      
       const updated = (await PlaylistStorage.getPlaylists()).find(pl => pl.name === selectedPlaylist.name);
       if (updated) {
         setSelectedPlaylist(updated);
@@ -128,7 +128,7 @@ export default function LibraryScreen() {
 
   const handleRemoveTrackFromPlaylist = async (trackId: string, playlistName: string) => {
     await PlaylistStorage.removeTrackFromPlaylist(trackId, playlistName);
-    // Refresh tracks for the open playlist
+    
     if (selectedPlaylist) {
       const updated = (await PlaylistStorage.getPlaylists()).find(pl => pl.name === playlistName);
       if (updated) {
@@ -181,7 +181,6 @@ export default function LibraryScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" translucent={false} />
-      {/* TopBar removed for cleaner library screen */}
       {showLikedSongs ? (
         <View style={[styles.scrollContent, { flex: 1 }]}> 
           <TouchableOpacity onPress={handleBackToLibrary} style={styles.backButton}>
@@ -339,7 +338,6 @@ export default function LibraryScreen() {
           />
       </View>
       )}
-      {/* Create Playlist Modal */}
       <Modal visible={showCreateModal} transparent animationType="fade" onRequestClose={() => setShowCreateModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>

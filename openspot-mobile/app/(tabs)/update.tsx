@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Linking } from 'react-native';
 
-const APP_LOGO = require('@/assets/images/adaptive-icon.png'); // Replace with your actual app logo path
-const DAB_LOGO = require('@/assets/images/144.png'); // Replace with your actual app logo path
+const APP_LOGO = require('@/assets/images/adaptive-icon.png'); 
+const DAB_LOGO = require('@/assets/images/144.png'); 
 const APP_NAME = 'OpenSpot';
-const CURRENT_VERSION = 'v2.0.3';
+const CURRENT_VERSION = 'v2.0.4';
 const RELEASES_URL = 'https://github.com/BlackHatDevX/openspot-music-app/releases';
 const GITHUB_REPO_URL = 'https://github.com/BlackHatDevX/openspot-music-app';
 const Cr = "VlVjNU0xcFlTbXhhUTBKcFpWTkNhMWxYU1hWbFYxWnNaRU0xZW1SUlBUMD0=";
@@ -19,7 +19,7 @@ export default function UpdateScreen() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
 
   useEffect(() => {
-    // Fetch latest release from GitHub
+    
     fetch('https://api.github.com/repos/BlackHatDevX/openspot-music-app/releases/latest')
       .then(res => res.json())
       .then(data => {

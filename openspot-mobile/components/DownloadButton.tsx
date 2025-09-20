@@ -68,7 +68,7 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({ track, style, on
     try {
       setIsDownloading(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      // 1. Ensure 'offline' playlist exists
+      
       let playlists = await PlaylistStorage.getPlaylists();
       let offline = playlists.find(pl => pl.name === 'offline');
       if (!offline) {
@@ -76,29 +76,33 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({ track, style, on
         playlists.push(offline);
         await PlaylistStorage.savePlaylists(playlists);
       }
-      // 2. Add track to 'offline' playlist if not already
+      
       if (!offline.trackIds.includes(track.id.toString())) {
         offline.trackIds.push(track.id.toString());
         await PlaylistStorage.savePlaylists(playlists);
       }
-      // 3. Download music file
+      
       const audioUrl = await import('../lib/music-api').then(m => m.MusicAPI.getStreamUrl(track.id.toString()));
       const safeFileName = `offline_${track.id}.mp3`;
       const fileUri = FileSystem.documentDirectory + safeFileName;
       const downloadResumable = FileSystem.createDownloadResumable(audioUrl, fileUri);
       await downloadResumable.downloadAsync();
-      // 4. Download thumbnail
+      
       const thumbUrl = track.images.large;
       const thumbFileName = `offline_${track.id}.jpg`;
       const thumbUri = FileSystem.documentDirectory + thumbFileName;
       try {
         await FileSystem.downloadAsync(thumbUrl, thumbUri);
       } catch (e) {
-        // fallback: skip thumbnail if fails
+        
       }
-      // 5. Save URIs in AsyncStorage
-      await AsyncStorage.setItem(`offline_${track.id}`, JSON.stringify({ fileUri, thumbUri }));
-      // 6. Feedback
+      
+      await AsyncStorage.setItem(`offline_${track.id}`, JSON.stringify({ 
+        fileUri, 
+        thumbUri, 
+        trackData: track 
+      }));
+      
       setIsDownloaded(true);
       setDownloadedPath(fileUri);
       setShowDownloadAlert(true);

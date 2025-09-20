@@ -38,7 +38,7 @@ export default function HomeScreen() {
   const [trendingDataLoading, setTrendingDataLoading] = useState(true);
   const [trendingCache, setTrendingCache] = useState<Record<string, Track>>({});
 
-  // Load trending track cache from AsyncStorage on mount
+  
   useEffect(() => {
     (async () => {
       try {
@@ -71,10 +71,8 @@ export default function HomeScreen() {
   useEffect(() => {
     (async () => {
       try {
-        console.log('Fetching country from ipinfo.io...');
         const res = await fetch('https://ipinfo.io/json');
         const data = await res.json();
-        console.log('Country API response:', data);
         if (data && data.country && COUNTRY_NAMES[data.country]) {
           setCountry(COUNTRY_NAMES[data.country]);
         } else {
@@ -92,35 +90,34 @@ export default function HomeScreen() {
   useEffect(() => {
     let isMounted = true;
     const fetchTrendingTracks = async (list: string[]) => {
-      // Load cache from state
+      
       let cache = { ...trendingCache };
       const tracks: Track[] = [];
       let cacheChanged = false;
       
-      // First, add all cached tracks immediately
+      
       for (const entry of list) {
         if (cache[entry]) {
           tracks.push(cache[entry]);
         }
       }
       
-      // Display cached tracks immediately
+      
       if (isMounted) {
         setTrendingTracks([...tracks]);
       }
       
-      // Then fetch missing tracks one by one and add them progressively
+      
       for (const entry of list) {
         if (!cache[entry]) {
           try {
-            console.log(`[Trending] Searching for: ${entry}`);
             const res = await MusicAPI.searchTracks(entry);
             if (res.tracks && res.tracks.length > 0) {
               cache[entry] = res.tracks[0];
               tracks.push(res.tracks[0]);
               cacheChanged = true;
               
-              // Update state immediately when a new track is found
+              
               if (isMounted) {
                 setTrendingTracks([...tracks]);
               }
@@ -143,7 +140,7 @@ export default function HomeScreen() {
       }
     };
     if (!countryLoading && !trendingDataLoading && trendingData && country && country !== 'your country') {
-      // Use lowercased country key for lookup
+      
       const countryKey = country.toLowerCase();
       const trendingKey = Object.keys(trendingData).find(
         k => k.toLowerCase() === countryKey
@@ -169,7 +166,7 @@ export default function HomeScreen() {
   };
 
   const handleSearchClick = () => {
-    // setCurrentView('search');
+    
     const router = useRouter();
     router.push('/search');
   };

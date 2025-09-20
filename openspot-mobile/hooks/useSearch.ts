@@ -22,7 +22,7 @@ export function useSearch(): UseSearchReturn {
   const [hasMore, setHasMore] = useState(false);
   const [offset, setOffset] = useState(0);
   
-  // Use ref to track current search operation and prevent race conditions
+  
   const currentSearchRef = useRef<string>('');
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -33,12 +33,12 @@ export function useSearch(): UseSearchReturn {
       return;
     }
 
-    // Cancel any ongoing search request
+    
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
 
-    // Create new abort controller for this search
+    
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
     currentSearchRef.current = searchQuery;
@@ -54,21 +54,21 @@ export function useSearch(): UseSearchReturn {
         type: 'track'
       });
 
-      // Check if this search is still current (not cancelled)
+      
       if (currentSearchRef.current === searchQuery && !abortController.signal.aborted) {
         setResults(response.tracks);
         setHasMore(response.pagination.hasMore);
         setOffset(response.tracks.length);
       }
     } catch (err) {
-      // Only set error if the request wasn't aborted
+      
       if (!abortController.signal.aborted) {
         setError(err instanceof Error ? err.message : 'Search failed');
         setResults([]);
         setHasMore(false);
       }
     } finally {
-      // Only set loading to false if this is still the current search
+      
       if (currentSearchRef.current === searchQuery && !abortController.signal.aborted) {
         setIsLoading(false);
       }
@@ -78,7 +78,7 @@ export function useSearch(): UseSearchReturn {
   const loadMore = useCallback(async () => {
     if (!query.trim() || isLoading || !hasMore) return;
 
-    // Cancel any ongoing request
+    
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -96,7 +96,7 @@ export function useSearch(): UseSearchReturn {
         type: 'track'
       });
 
-      // Check if this request is still valid
+      
       if (!abortController.signal.aborted) {
         setResults(prev => [...prev, ...response.tracks]);
         setHasMore(response.pagination.hasMore);
@@ -114,7 +114,7 @@ export function useSearch(): UseSearchReturn {
   }, [query, offset, isLoading, hasMore]);
 
   const clearResults = useCallback(() => {
-    // Cancel any ongoing search
+    
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -128,7 +128,7 @@ export function useSearch(): UseSearchReturn {
     currentSearchRef.current = '';
   }, []);
 
-  // Cleanup on unmount
+  
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) {

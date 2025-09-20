@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingVertical: 8,
-    paddingBottom: 180, // Space for music player + 2 items
+    paddingBottom: 180, 
   },
   trackItem: {
     flexDirection: 'row',

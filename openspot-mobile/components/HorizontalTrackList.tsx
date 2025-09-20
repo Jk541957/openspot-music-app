@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 10,
     marginTop: 4,
-    paddingBottom: 12, // Add more padding to bottom text
+    paddingBottom: 12, 
   },
   trackTitle: {
     fontSize: 15,

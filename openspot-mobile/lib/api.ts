@@ -1,7 +1,6 @@
 // Dab yeet su API configuration
 export const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
-// API endpoints
 export const API_ENDPOINTS = {
   SEARCH: '/search',
   STREAM: '/stream',

@@ -23,12 +23,15 @@ import { MusicAPI } from '../lib/music-api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FullScreenPlayer } from './FullScreenPlayer';
 import { useLikedSongs } from '../hooks/useLikedSongs';
+import { NotificationService } from '../lib/notification-service';
+import { WakelockService } from '../lib/wakelock-service';
+import * as Notifications from 'expo-notifications';
 
 interface PlayerProps {
   track: Track;
   isPlaying: boolean;
   onPlayingChange: (playing: boolean) => void;
-  musicQueue: any; // Will type this properly later
+  musicQueue: any; 
   onQueueToggle: () => void;
 }
 
@@ -50,7 +53,7 @@ export function Player({
   const [isFullScreenOpen, setIsFullScreenOpen] = useState(false);
   const [isSeeking, setIsSeeking] = useState(false);
   
-  // Download modal states
+  
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [downloadStatus, setDownloadStatus] = useState<'idle' | 'downloading' | 'success' | 'error'>('idle');
@@ -64,7 +67,7 @@ export function Player({
   const currentTrackIdRef = useRef<number | null>(null);
   const lastSeekTimeRef = useRef<number>(0);
 
-  // Configure audio session for background playback
+  
   useEffect(() => {
     const configureAudioSession = async () => {
       try {
@@ -73,7 +76,6 @@ export function Player({
           interruptionMode: 'duckOthers',
           shouldPlayInBackground: true,
         });
-        console.log('🎵 Audio session configured for background playback');
       } catch (error) {
         console.error('Failed to configure audio session:', error);
       }
@@ -82,7 +84,49 @@ export function Player({
     configureAudioSession();
   }, []);
 
-  // Cleanup on unmount
+  
+  useEffect(() => {
+    const initializeServices = async () => {
+      try {
+        await NotificationService.initialize();
+      } catch (error) {
+        console.error('Failed to initialize services:', error);
+      }
+    };
+
+    initializeServices();
+  }, []);
+
+  
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+      const { actionIdentifier, notification } = response;
+      const data = notification.request.content.data;
+
+      if (data?.type === 'media') {
+        switch (actionIdentifier) {
+          case 'play_pause':
+            handlePlayPause();
+            break;
+          case 'next':
+            handleNext();
+            break;
+          case 'previous':
+            handlePrevious();
+            break;
+          case 'close':
+            onPlayingChange(false);
+            NotificationService.hideMediaNotification();
+            WakelockService.deactivate();
+            break;
+        }
+      }
+    });
+
+    return () => subscription.remove();
+  }, [track, isPlaying, musicQueue]);
+
+  
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
@@ -90,22 +134,24 @@ export function Player({
       if (downloadTimeoutRef.current) {
         clearTimeout(downloadTimeoutRef.current);
       }
-      // Cleanup audio player
+      
       if (player) {
         try {
-          console.log('🧹 Component unmounting - cleaning up audio');
           player.pause();
         } catch (e) {
-          // Ignore errors if player is already released
+          
           console.warn('Player pause on unmount failed:', e);
         }
       }
+      
+      NotificationService.hideMediaNotification();
+      WakelockService.deactivate();
     };
-  }, []); // Only run on unmount
+  }, []); 
 
-  // Debug: Monitor musicQueue state changes
+  
   useEffect(() => {
-    console.log('🎵 MusicQueue state:', {
+    console.log('MusicQueue state:', {
       isShuffled: musicQueue.isShuffled,
       repeatMode: musicQueue.repeatMode,
       currentIndex: musicQueue.currentIndex,
@@ -113,44 +159,50 @@ export function Player({
     });
   }, [musicQueue.isShuffled, musicQueue.repeatMode, musicQueue.currentIndex, musicQueue.queue.length]);
 
-  // Load new track when track changes
+  
   useEffect(() => {
     if (track) {
       loadAudio();
+      
     }
-  }, [track.id]); // Only reload when track ID changes
+  }, [track.id]); 
 
-  // Handle play/pause state changes
+  
   useEffect(() => {
     if (player) {
       if (isPlaying) {
         player.play();
+        
+        WakelockService.activate();
+        NotificationService.showOrUpdateMediaNotification(track, true);
       } else {
         player.pause();
+        
+        WakelockService.deactivate();
+        NotificationService.showOrUpdateMediaNotification(track, false);
       }
     }
-  }, [isPlaying, player]);
+  }, [isPlaying, player, track]);
 
-  // Listen to player events
+  
   useEffect(() => {
     if (!player) return;
 
     const positionSubscription = player.addListener('playbackStatusUpdate', (status) => {
-      // Only update position if user is not currently seeking and enough time has passed since last seek
+      
       const timeSinceLastSeek = Date.now() - lastSeekTimeRef.current;
       if (!isSeeking && timeSinceLastSeek > 200 && status.currentTime !== undefined) {
-        setPosition(status.currentTime * 1000); // Convert to milliseconds
+        setPosition(status.currentTime * 1000); 
       }
       
-      // Always update duration
+      
       if (status.duration !== undefined) {
-        setDuration(status.duration * 1000); // Convert to milliseconds
+        setDuration(status.duration * 1000); 
       }
     });
 
     const finishSubscription = player.addListener('playbackStatusUpdate', (status) => {
       if (status.isLoaded && status.didJustFinish) {
-        console.log('🎵 Track finished - calling handleNext(), repeatMode:', musicQueue.repeatMode);
         handleNext();
       }
     });
@@ -161,7 +213,7 @@ export function Player({
     };
   }, [player, isSeeking, musicQueue.repeatMode]);
 
-  // Start album art rotation when playing
+  
   useEffect(() => {
     if (isPlaying) {
       startRotation();
@@ -195,53 +247,48 @@ export function Player({
   };
 
   const loadAudio = async () => {
-    // Prevent multiple concurrent loadAudio calls
+    
     if (isLoading) {
-      console.log('🎵 Audio already loading, skipping duplicate call');
       return;
     }
-    // Check if we're loading the same track - if so, don't reload
+    
     if (currentTrackIdRef.current === track.id) {
-      console.log('🎵 Same track, skipping reload');
       return;
     }
     setIsLoading(true);
     currentTrackIdRef.current = track.id;
     try {
-      // Reset player state for new track
+      
       setPosition(0);
       setDuration(0);
-      // 1. Check for offline file
+      
       let audioUrl: string | null = null;
       try {
         const offlineData = await AsyncStorage.getItem(`offline_${track.id}`);
         if (offlineData) {
           const { fileUri } = JSON.parse(offlineData);
-          // Check if file exists
+          
           const fileInfo = await FileSystem.getInfoAsync(fileUri);
           if (fileInfo.exists) {
             audioUrl = fileUri;
-            console.log('🎵 Playing from offline file:', fileUri);
           }
         }
       } catch (e) {
-        // Ignore and fallback to streaming
+        
       }
-      // 2. If not offline, get the actual streaming URL from the API
+      
       if (!audioUrl) {
-        console.log('🎵 Loading stream URL for track:', track.id);
         audioUrl = await MusicAPI.getStreamUrl(track.id.toString());
-        console.log('🔗 Stream URL received:', audioUrl);
       }
-      // Replace the current audio source with metadata for background playback
+      
       player.replace({
         uri: audioUrl,
       });
-      // Set volume
+      
       player.volume = volume;
     } catch (error) {
       console.error('Error loading audio:', error);
-      // Show user-friendly error message
+      
       Alert.alert('Playback Error', 'Failed to load audio. Please try again.');
     } finally {
       setIsLoading(false);
@@ -267,13 +314,7 @@ export function Player({
 
   const handleNext = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
-    console.log('🎵 handleNext called - repeatMode:', musicQueue.repeatMode);
-    
-    // Check if we're in repeat one mode
     if (musicQueue.repeatMode === 'one') {
-      // For repeat one, restart the current track without calling musicQueue.playNext()
-      console.log('🔁 Repeat One: Restarting current track');
       if (player) {
         player.seekTo(0);
         player.play();
@@ -282,14 +323,11 @@ export function Player({
       return;
     }
     
-    // Normal next track logic
+    
     const nextTrack = musicQueue.playNext();
     if (nextTrack) {
-      console.log('⏭️ Playing next track:', nextTrack.title);
       onPlayingChange(true);
     } else {
-      // End of queue, stop playback
-      console.log('⏹️ End of queue, stopping playback');
       onPlayingChange(false);
     }
   };
@@ -305,11 +343,11 @@ export function Player({
   const handleSeek = async (value: number) => {
     if (player) {
       try {
-        // Immediately update the position state for instant visual feedback
+        
         setPosition(value);
-        // Then seek the audio to that position (convert milliseconds to seconds)
+        
         player.seekTo(value / 1000);
-        // Record the seek time to prevent immediate position updates from status callback
+        
         lastSeekTimeRef.current = Date.now();
       } catch (error) {
         console.error('Error seeking:', error);
@@ -324,11 +362,11 @@ export function Player({
   const handleSliderComplete = async (value: number) => {
     if (player) {
       try {
-        // Immediately update the position state for instant visual feedback
+        
         setPosition(value);
-        // Then seek the audio to that position (convert milliseconds to seconds)
+        
         player.seekTo(value / 1000);
-        // Record the seek time to prevent immediate position updates from status callback
+        
         lastSeekTimeRef.current = Date.now();
       } catch (error) {
         console.error('Error seeking:', error);
@@ -338,14 +376,14 @@ export function Player({
   };
 
   const handleSliderChange = (value: number) => {
-    // Always update position during seeking for smooth UI
+    
     if (isSeeking) {
       setPosition(value);
     }
   };
 
   const handleVolumeChange = async (value: number) => {
-    // FullScreenPlayer now passes 0-1 range directly
+    
     setVolume(value);
     if (player) {
       player.volume = value;
@@ -364,32 +402,28 @@ export function Player({
   const handleShuffle = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const newShuffleState = musicQueue.toggleShuffle();
-    console.log('🔀 Shuffle toggled:', newShuffleState);
   };
 
   const handleRepeat = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const newRepeatMode = musicQueue.toggleRepeat();
-    console.log('🔁 Repeat mode changed:', newRepeatMode);
   };
 
   const handleShare= async () => {
-    // Prevent multiple simultaneous downloads
+    
     if (downloadStatus === 'downloading') {
-      console.log('📥 Download already in progress, ignoring request');
       return;
     }
     
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
-    // Auto-pause the music when download starts
+    
     if (isPlaying && player) {
       player.pause();
       onPlayingChange(false);
-      console.log('🎵 Music paused for download');
     }
     
-    // Reset download state
+    
     if (isMountedRef.current) {
       setDownloadProgress(0);
       setDownloadStatus('idle');
@@ -398,7 +432,7 @@ export function Player({
     }
     
     try {
-      // Check if sharing is available
+      
       const isAvailable = await Sharing.isAvailableAsync();
       
       if (!isAvailable) {
@@ -412,16 +446,13 @@ export function Player({
       if (isMountedRef.current) {
         setDownloadStatus('downloading');
       }
-      console.log('📥 Starting download for track:', track.title);
-      
-      // Get the streaming URL
       const audioUrl = await MusicAPI.getStreamUrl(track.id.toString());
       
-      // Create a safe filename
+      
       const safeFileName = `${track.title.replace(/[^a-zA-Z0-9\s]/g, '')}_${track.artist.replace(/[^a-zA-Z0-9\s]/g, '')}.mp3`;
       const fileUri = FileSystem.documentDirectory + safeFileName;
       
-      // Start the download with progress tracking
+      
       const downloadResumable = FileSystem.createDownloadResumable(
         audioUrl,
         fileUri,
@@ -430,7 +461,6 @@ export function Player({
           if (isMountedRef.current) {
             const progress = downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite;
             setDownloadProgress(Math.round(progress * 100));
-            console.log(`📥 Download progress: ${Math.round(progress * 100)}%`);
           }
         }
       );
@@ -438,32 +468,25 @@ export function Player({
       const downloadResult = await downloadResumable.downloadAsync();
       
       if (downloadResult) {
-        console.log('📥 Download completed:', downloadResult.uri);
-        
-        // Share the downloaded file
         try {
           await Sharing.shareAsync(downloadResult.uri, {
             mimeType: 'audio/mpeg',
             dialogTitle: `Share ${track.title} by ${track.artist}`,
             UTI: 'public.audio'
           });
-          
-          console.log('📥 File shared successfully');
         } catch (shareError) {
-          console.log('📥 File downloaded but sharing failed:', shareError);
-          // Still mark as success since file was downloaded
         }
         
         try {
           if (isMountedRef.current) {
             setDownloadStatus('success');
             
-            // Clear any existing timeout
+            
             if (downloadTimeoutRef.current) {
               clearTimeout(downloadTimeoutRef.current);
             }
             
-            // Auto-close modal after 3 seconds with proper cleanup
+            
             downloadTimeoutRef.current = setTimeout(() => {
               if (isMountedRef.current) {
                 try {
@@ -477,7 +500,7 @@ export function Player({
           }
         } catch (stateError) {
           console.error('Error updating download state:', stateError);
-          // Fallback: close modal immediately on error
+          
           if (isMountedRef.current) {
             try {
               setIsDownloadModalOpen(false);
@@ -503,7 +526,7 @@ export function Player({
 
   const handleCloseDownloadModal = () => {
     try {
-      // Clear any pending timeout
+      
       if (downloadTimeoutRef.current) {
         clearTimeout(downloadTimeoutRef.current);
         downloadTimeoutRef.current = null;
@@ -573,11 +596,9 @@ export function Player({
         <View style={[styles.whiteProgressBarFill, { width: duration > 0 ? `${(position / duration) * 100}%` : '0%' }]} />
       </View>
       </View>
-      {/* White progress bar at bottom */}
+      
 
-
-      {/* Download Modal */}
-      <Modal
+            <Modal
         visible={isDownloadModalOpen}
         transparent={true}
         animationType="fade"
@@ -589,8 +610,7 @@ export function Player({
               colors={['#1a1a1a', '#2a2a2a']}
               style={styles.modalGradient}
             >
-              {/* Header */}
-              <View style={styles.modalHeader}>
+                            <View style={styles.modalHeader}>
                 <Ionicons name="download" size={24} color="#1DB954" />
                 <Text style={styles.modalTitle}>Download</Text>
                 <TouchableOpacity
@@ -600,10 +620,8 @@ export function Player({
                   <Ionicons name="close" size={20} color="#888" />
                 </TouchableOpacity>
               </View>
-              {/* Content */}
-              <View style={styles.modalContent}>
-                {/* Track Info */}
-                <View style={styles.trackInfo}>
+                            <View style={styles.modalContent}>
+                                <View style={styles.trackInfo}>
                   <Image
                     source={{ uri: MusicAPI.getOptimalImage(track.images) }}
                     style={styles.modalAlbumArt}
@@ -619,8 +637,7 @@ export function Player({
                   </View>
                 </View>
 
-                {/* Status Content */}
-                <View style={styles.statusContainer}>
+                                <View style={styles.statusContainer}>
                   {downloadStatus === 'idle' && (
                     <Text style={styles.statusText}>Preparing download...</Text>
                   )}
@@ -669,8 +686,7 @@ export function Player({
         </View>
       </Modal>
 
-      {/* Full Screen Player */}
-      <FullScreenPlayer
+            <FullScreenPlayer
         isOpen={isFullScreenOpen}
         onClose={() => setIsFullScreenOpen(false)}
         track={track}
@@ -882,7 +898,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  // Add new styles for the visual progress bar and song title
+  
   visualProgressBarContainer: {
     width: '100%',
     height: 5,

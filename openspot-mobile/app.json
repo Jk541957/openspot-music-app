@@ -2,7 +2,7 @@
   "expo": {
     "name": "OpenSpot",
     "slug": "OpenSpot",
-    "version": "2.0.3",
+    "version": "2.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "openspot",
@@ -17,7 +17,9 @@
           "NSAllowsArbitraryLoads": true
         }
       },
-      "backgroundModes": ["audio"]
+      "backgroundModes": [
+        "audio"
+      ]
     },
     "android": {
       "adaptiveIcon": {
@@ -26,7 +28,16 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.devx.openspot",
-      "versionCode": 2,
+      "versionCode": 12,
+      "foregroundService": {
+        "type": "mediaPlayback",
+        "notification": {
+          "title": "OpenSpot",
+          "body": "Playing music in background",
+          "icon": "./assets/images/icon.png",
+          "color": "#1DB954"
+        }
+      },
       "permissions": [
         "INTERNET",
         "READ_EXTERNAL_STORAGE",
@@ -34,7 +45,9 @@
         "RECORD_AUDIO",
         "MODIFY_AUDIO_SETTINGS",
         "WAKE_LOCK",
-        "FOREGROUND_SERVICE"
+        "FOREGROUND_SERVICE",
+        "POST_NOTIFICATIONS",
+        "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
       ]
     },
     "web": {
@@ -57,12 +70,15 @@
       [
         "expo-audio",
         {
-          "microphonePermission": "This app uses the microphone to record audio for voice features.",
-          "recordAudioAndroid": {
-            "foregroundService": {
-              "notificationBody": "This app appears to be running a foreground service."
-            }
-          }
+          "microphonePermission": "This app uses the microphone to record audio for voice features."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#1DB954",
+          "defaultChannel": "default"
         }
       ]
     ],

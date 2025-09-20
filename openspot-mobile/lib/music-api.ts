@@ -4,17 +4,16 @@ import { SearchResponse, SearchParams, Track } from '../types/music';
 export const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 
-// Configure axios instance
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000, // 30 second timeout
+  timeout: 30000, 
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 export class MusicAPI {
-  // Separate caches for different types of requests to prevent interference
+  
   private static searchCache = new Map<string, Promise<any>>();
   private static streamCache = new Map<string, Promise<any>>();
   
@@ -27,20 +26,20 @@ export class MusicAPI {
       type,
     });
 
-    // Create a unique cache key for this search request
+    
     const cacheKey = `search_${searchParams.toString()}`;
     
-    // If the same search request is already in progress, return the existing promise
+    
     if (this.searchCache.has(cacheKey)) {
       return this.searchCache.get(cacheKey);
     }
 
     const requestPromise = this.performSearch(searchParams);
     
-    // Store the promise in search cache
+    
     this.searchCache.set(cacheKey, requestPromise);
     
-    // Clean up cache after request completes (success or failure)
+    
     requestPromise.finally(() => {
       this.searchCache.delete(cacheKey);
     });
@@ -93,17 +92,17 @@ export class MusicAPI {
   static async getStreamUrl(trackId: string): Promise<string> {
     const cacheKey = `stream_${trackId}`;
     
-    // Check if stream request is already in progress - use separate cache
+    
     if (this.streamCache.has(cacheKey)) {
       return this.streamCache.get(cacheKey);
     }
 
     const requestPromise = this.performStreamRequest(trackId);
     
-    // Store the promise in stream cache
+    
     this.streamCache.set(cacheKey, requestPromise);
     
-    // Clean up cache after request completes (success or failure)
+    
     requestPromise.finally(() => {
       this.streamCache.delete(cacheKey);
     });
@@ -113,9 +112,9 @@ export class MusicAPI {
 
   private static async performStreamRequest(trackId: string): Promise<string> {
     try {
-      // Use the same endpoint format as the Next.js version
+      
       const response: AxiosResponse<{ url: string }> = await apiClient.get(`/stream?trackId=${trackId}`, {
-        timeout: 15000 // 15 second timeout for streams
+        timeout: 15000 
       });
       
       if (!response.data.url) {
@@ -135,7 +134,7 @@ export class MusicAPI {
   static async getPopularTracks(): Promise<Track[]> {
     try {
       const response = await this.search({ q: 'popular', type: 'track' });
-      return response.tracks.slice(0, 10); // Return top 10 popular tracks
+      return response.tracks.slice(0, 10); 
     } catch (error) {
       console.error('Error fetching popular tracks:', error);
       return [];
@@ -143,14 +142,14 @@ export class MusicAPI {
   }
 
   static async getRecentlyPlayed(): Promise<Track[]> {
-    // For now, return empty array - this would typically come from user's play history
+    
     return [];
   }
 
   static async getMadeForYou(): Promise<Track[]> {
     try {
       const response = await this.search({ q: 'recommended', type: 'track' });
-      return response.tracks.slice(0, 10); // Return top 10 recommended tracks
+      return response.tracks.slice(0, 10); 
     } catch (error) {
       console.error('Error fetching made for you tracks:', error);
       return [];

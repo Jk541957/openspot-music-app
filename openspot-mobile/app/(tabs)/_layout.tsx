@@ -7,10 +7,10 @@ import { useLikedSongs } from '@/hooks/useLikedSongs';
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Track } from '@/types/music';
 import { View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface MusicPlayerContextType {
   musicQueue: ReturnType<typeof useMusicQueue>;
@@ -38,6 +38,7 @@ export default function TabLayout() {
   const likedSongs = useLikedSongs();
   const [isQueueOpen, setIsQueueOpen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const handleTrackSelect = (track: Track, trackList?: Track[], startIndex?: number) => {
     if (musicQueue.currentTrack?.id === track.id) {
@@ -84,90 +85,99 @@ export default function TabLayout() {
         toggleQueue,
       }}
     >
-      <View style={{ flex: 1, position: 'relative' }}>
-        <Tabs
-          screenOptions={{
-            tabBarActiveTintColor: '#fff',
-            headerShown: false,
-            tabBarButton: HapticTab,
-            tabBarBackground: TabBarBackground,
-            tabBarStyle: {
-              backgroundColor: '#000', // AMOLED black
-              borderTopWidth: 0,
-              height: 64, // slightly taller for padding
-            },
-            tabBarLabelStyle: {
-              paddingBottom: 8, // add padding below text
-            },
-          }}
-        >
-          <Tabs.Screen
-            name="index"
-            options={{
-              title: 'Home',
-              tabBarIcon: ({ color }) => (
-                <IconSymbol size={28} name="house.fill" color={color} />
-              ),
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }}>
+        <View style={{ flex: 1, position: 'relative' }}>
+          <Tabs
+            screenOptions={{
+              tabBarActiveTintColor: '#fff',
+              headerShown: false,
+              tabBarButton: HapticTab,
+              tabBarBackground: TabBarBackground,
+              tabBarStyle: {
+                backgroundColor: '#000', 
+                borderTopWidth: 0,
+                height: 64 + insets.bottom, 
+                paddingBottom: insets.bottom, 
+              },
+              tabBarLabelStyle: {
+                paddingBottom: 8, 
+              },
             }}
-          />
-          <Tabs.Screen
-            name="search"
-            options={{
-              title: 'Search',
-              tabBarIcon: ({ color }) => (
-                <IconSymbol size={28} name="magnifyingglass" color={color} />
-              ),
-            }}
-          />
-          <Tabs.Screen
-            name="library"
-            options={{
-              title: 'Library',
-              tabBarIcon: ({ color }) => (
-                <IconSymbol size={28} name="books.vertical.fill" color={color} />
-              ),
-            }}
-          />
-          <Tabs.Screen
-            name="downloads"
-            options={{
-              title: 'Downloads',
-              tabBarIcon: ({ color }) => (
-                <IconSymbol size={28} name="arrow.down.circle.fill" color={color} />
-              ),
-            }}
-          />
-          <Tabs.Screen
-            name="update"
-            options={{
-              title: 'Update',
-              tabBarIcon: ({ color }) => (
-                <IconSymbol size={28} name="checkmark.shield.fill" color={color} />
-              ),
-            }}
-          />
-        </Tabs>
-        {isQueueOpen && (
-          <QueueDisplay
-            isOpen={isQueueOpen}
-            onClose={closeQueue}
-            musicQueue={musicQueue}
-            onTrackSelect={handleQueueTrackSelect}
-            currentTrack={musicQueue.currentTrack}
-          />
-        )}
-        {musicQueue.currentTrack && (
-          <View style={{ position: 'absolute', left: 0, right: 0, bottom: 64, zIndex: 100 }}>
-            <Player
-              track={musicQueue.currentTrack}
-              isPlaying={isPlaying}
-              onPlayingChange={handlePlayingStateChange}
-              musicQueue={musicQueue}
-              onQueueToggle={toggleQueue}
+          >
+            <Tabs.Screen
+              name="index"
+              options={{
+                title: 'Home',
+                tabBarIcon: ({ color }) => (
+                  <IconSymbol size={28} name="house.fill" color={color} />
+                ),
+              }}
             />
-          </View>
-        )}
-      </View>
+            <Tabs.Screen
+              name="search"
+              options={{
+                title: 'Search',
+                tabBarIcon: ({ color }) => (
+                  <IconSymbol size={28} name="magnifyingglass" color={color} />
+                ),
+              }}
+            />
+            <Tabs.Screen
+              name="library"
+              options={{
+                title: 'Library',
+                tabBarIcon: ({ color }) => (
+                  <IconSymbol size={28} name="books.vertical.fill" color={color} />
+                ),
+              }}
+            />
+            <Tabs.Screen
+              name="downloads"
+              options={{
+                title: 'Downloads',
+                tabBarIcon: ({ color }) => (
+                  <IconSymbol size={28} name="arrow.down.circle.fill" color={color} />
+                ),
+              }}
+            />
+            <Tabs.Screen
+              name="update"
+              options={{
+                title: 'Update',
+                tabBarIcon: ({ color }) => (
+                  <IconSymbol size={28} name="checkmark.shield.fill" color={color} />
+                ),
+              }}
+            />
+          </Tabs>
+          {isQueueOpen && (
+            <QueueDisplay
+              isOpen={isQueueOpen}
+              onClose={closeQueue}
+              musicQueue={musicQueue}
+              onTrackSelect={handleQueueTrackSelect}
+              currentTrack={musicQueue.currentTrack}
+            />
+          )}
+          {musicQueue.currentTrack && (
+            <View style={{ 
+              position: 'absolute', 
+              left: 0, 
+              right: 0, 
+              bottom: 64 + insets.bottom, 
+              zIndex: 100 
+            }}>
+              <Player
+                track={musicQueue.currentTrack}
+                isPlaying={isPlaying}
+                onPlayingChange={handlePlayingStateChange}
+                musicQueue={musicQueue}
+                onQueueToggle={toggleQueue}
+              />
+            </View>
+          )}
+        </View>
+      </SafeAreaView>
     </MusicPlayerContext.Provider>
   );
 }

@@ -16,7 +16,7 @@ interface LikedSong {
     large: string;
     back: string | null;
   };
-  likedAt: string; // ISO date string
+  likedAt: string; 
 }
 
 interface LikedSongsContextType {
@@ -42,7 +42,7 @@ export function LikedSongsProvider({ children }: LikedSongsProviderProps) {
   const [likedSongs, setLikedSongs] = useState<LikedSong[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load liked songs from AsyncStorage on mount
+  
   useEffect(() => {
     const loadLikedSongs = async () => {
       try {
@@ -50,7 +50,6 @@ export function LikedSongsProvider({ children }: LikedSongsProviderProps) {
         if (savedLikedSongs) {
           const parsed = JSON.parse(savedLikedSongs) as LikedSong[];
           setLikedSongs(parsed);
-          console.log(`💖 Loaded ${parsed.length} liked songs from AsyncStorage`);
         }
       } catch (error) {
         console.error('Failed to load liked songs from AsyncStorage:', error);
@@ -63,25 +62,23 @@ export function LikedSongsProvider({ children }: LikedSongsProviderProps) {
     loadLikedSongs();
   }, []);
 
-  // Save liked songs to AsyncStorage whenever the list changes
+  
   const saveLikedSongs = useCallback(async (songs: LikedSong[]) => {
     try {
       await AsyncStorage.setItem(LIKED_SONGS_STORAGE_KEY, JSON.stringify(songs));
-      console.log(`💾 Saved ${songs.length} liked songs to AsyncStorage`);
     } catch (error) {
       console.error('Failed to save liked songs to AsyncStorage:', error);
     }
   }, []);
 
-  // Check if a song is liked
+  
   const isLiked = useCallback((trackId: number): boolean => {
     return likedSongs.some(song => song.id === trackId);
   }, [likedSongs]);
 
-  // Add a song to liked songs
+  
   const likeSong = useCallback((track: Track) => {
     if (isLiked(track.id)) {
-      console.log(`💖 Song already liked: ${track.title}`);
       return;
     }
 
@@ -95,27 +92,24 @@ export function LikedSongsProvider({ children }: LikedSongsProviderProps) {
       likedAt: new Date().toISOString()
     };
 
-    const updatedLikedSongs = [likedSong, ...likedSongs]; // Add to beginning
+    const updatedLikedSongs = [likedSong, ...likedSongs]; 
     setLikedSongs(updatedLikedSongs);
     saveLikedSongs(updatedLikedSongs);
-    console.log(`💖 Liked song: ${track.title} by ${track.artist}`);
   }, [likedSongs, isLiked, saveLikedSongs]);
 
-  // Remove a song from liked songs
+  
   const unlikeSong = useCallback((trackId: number) => {
     const songToUnlike = likedSongs.find(song => song.id === trackId);
     if (!songToUnlike) {
-      console.log(`💔 Song not found in liked songs: ${trackId}`);
       return;
     }
 
     const updatedLikedSongs = likedSongs.filter(song => song.id !== trackId);
     setLikedSongs(updatedLikedSongs);
     saveLikedSongs(updatedLikedSongs);
-    console.log(`💔 Unliked song: ${songToUnlike.title} by ${songToUnlike.artist}`);
   }, [likedSongs, saveLikedSongs]);
 
-  // Toggle like status of a song
+  
   const toggleLike = useCallback((track: Track) => {
     if (isLiked(track.id)) {
       unlikeSong(track.id);
@@ -124,26 +118,25 @@ export function LikedSongsProvider({ children }: LikedSongsProviderProps) {
     }
   }, [isLiked, likeSong, unlikeSong]);
 
-  // Get liked songs count
+  
   const likedCount = likedSongs.length;
 
-  // Get recently liked songs (last 10)
+  
   const recentlyLiked = likedSongs.slice(0, 10);
 
-  // Clear all liked songs
+  
   const clearAllLiked = useCallback(() => {
     setLikedSongs([]);
     saveLikedSongs([]);
-    console.log('🗑️ Cleared all liked songs');
   }, [saveLikedSongs]);
 
-  // Convert LikedSong back to Track format for compatibility
+  
   const getLikedSongsAsTrack = useCallback((): Track[] => {
     return likedSongs.map(song => ({
       id: song.id,
       title: song.title,
       artist: song.artist,
-      artistId: 0, // Default value
+      artistId: 0, 
       albumTitle: song.albumTitle || '',
       albumCover: song.images.large,
       albumId: '',

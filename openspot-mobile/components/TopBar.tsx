@@ -59,7 +59,7 @@ export function TopBar({
 
   const handleSearchChange = (text: string) => {
     setQuery(text);
-    // Only clear results if text becomes empty
+    
     if (!text.trim()) {
       clearResults();
     }

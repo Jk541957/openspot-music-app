@@ -62,6 +62,7 @@ android/.DS_Store
 android/app/*.iml
 android/*.iml
 android/captures/
+android/
 
 # Environment files
 .env
@@ -83,3 +84,6 @@ android/captures/
 
 expo-env.d.ts
 # @end expo-cli
+
+#ios
+ios/
