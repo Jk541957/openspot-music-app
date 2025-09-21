@@ -223,9 +223,12 @@ npm run electron-dev
 
 ---
 
-## 🤝 Contributing
+## 🙌 Contributors
 
-We welcome contributions to both apps!
+A huge thanks to these amazing people who made this project possible:
+
+- [@sixnine-dotdev](https://github.com/sixnine-dotdev) – Core contributions, API integration and overall backbone of the project
+
 ## 📞 Community & Support
 
 - **Telegram**: [Openspot Music](https://telegram.dog/Openspot_Music)
@@ -251,4 +254,5 @@ This project is open-source and licensed under the MIT License. See the `LICENSE
   <br />
   <em>Your support helps us continue developing amazing free music apps for everyone.</em>
 </p> 
+
 
